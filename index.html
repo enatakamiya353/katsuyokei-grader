@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>国語 活用の種類・活用形 マークシートテスト 採点画面</title>
+<style>
+  body { font-family: "Yu Gothic", "Meiryo", sans-serif; background: #f4f7f6; color: #222; padding: 24px; }
+  .container { max-width: 1000px; margin: 0 auto; background: #fff; border-radius: 8px; padding: 24px 28px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+  h1 { font-size: 22px; margin-top: 0; }
+  .sub { color: #666; font-size: 13px; margin-top: -8px; margin-bottom: 20px; }
+  .upload-box { border: 2px dashed #9dc3e6; border-radius: 8px; padding: 20px; text-align: center; background: #f5faff; }
+  .upload-box.dragover { background: #e3f2fd; border-color: #1976d2; }
+  input[type=file] { margin-top: 8px; }
+  button { background: #1976d2; color: #fff; border: none; border-radius: 4px; padding: 10px 20px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 14px; }
+  button:hover { background: #1565c0; }
+  button:disabled { background: #bbb; cursor: not-allowed; }
+  #fileList { text-align: left; font-size: 13px; margin-top: 10px; color: #444; }
+  #status { font-weight: bold; color: #1976d2; margin-top: 10px; }
+  .summary-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+  .summary-table th, .summary-table td { border: 1px solid #ccc; padding: 8px 10px; text-align: center; }
+  .summary-table th { background: #eef3f8; }
+  .summary-table td.name { text-align: left; }
+  .score-ok { color: #2e7d32; font-weight: bold; }
+  .score-warn { color: #e65100; font-weight: bold; }
+  .card { border: 1px solid #ddd; border-radius: 6px; padding: 16px; margin-top: 16px; }
+  .card h3 { margin-top: 0; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; margin-left: 8px; }
+  .badge.wrong { background: #ffebee; color: #c62828; }
+  .badge.unclear { background: #fff3e0; color: #e65100; }
+  .badge.ok { background: #e8f5e9; color: #2e7d32; }
+  .q-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 4px; margin-top: 10px; }
+  .q-cell { border: 1px solid #ccc; border-radius: 4px; padding: 4px; text-align: center; font-size: 12px; }
+  .q-cell.wrong { background: #ffebee; border-color: #ef9a9a; }
+  .q-cell.unclear { background: #fff3e0; border-color: #ffcc80; }
+  .q-cell .qn { color: #888; }
+  .q-cell .mk { font-weight: bold; font-size: 14px; }
+  details { margin-top: 10px; }
+  img.overlay { max-width: 100%; border: 1px solid #ccc; margin-top: 8px; }
+  .legend { font-size: 12px; color: #666; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>国語 活用の種類・活用形 マークシートテスト採点画面</h1>
+  <p class="sub">スキャンした解答用紙（画像 または PDF）をアップロードすると、○の塗りつぶしを自動判定して採点します。解答用紙は1人1枚。複数ページのPDFは1ページ=1名分として扱います。問題ごとに選択肢の数（4択・5択・6択）が異なりますが、自動で判定します。</p>
+
+  <div class="upload-box" id="dropZone">
+    <div>解答用紙のファイルをここにドラッグ＆ドロップ、または選択してください</div>
+    <input type="file" id="fileInput" multiple accept="image/*,application/pdf">
+    <div id="fileList"></div>
+    <div>
+      <button id="gradeBtn" disabled>採点する</button>
+    </div>
+    <div id="status"></div>
+  </div>
+
+  <div id="resultsArea" style="display:none;">
+    <p class="sub" style="margin-top:16px;">氏名欄は解答用紙の手書き氏名を読み取れないため、印刷前に確認・修正してください（未入力の場合はファイル名で印刷されます）。</p>
+    <table class="summary-table" id="summaryTable">
+      <thead><tr><th>氏名（クリックで編集）</th><th>得点</th><th>誤答</th><th>要確認</th><th>補正</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <div id="aggregateArea" class="card" style="background:#f5faff;"></div>
+
+    <div style="margin-top:16px;">
+      <button id="printBtn">🖨 集計表＋個人シートを印刷用に開く</button>
+      <button id="csvBtn">⬇ CSVをダウンロード（成績表ポート用）</button>
+    </div>
+
+    <div id="detailArea"></div>
+  </div>
+</div>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const fileListEl = document.getElementById('fileList');
+const gradeBtn = document.getElementById('gradeBtn');
+const statusEl = document.getElementById('status');
+const resultsArea = document.getElementById('resultsArea');
+const summaryBody = document.querySelector('#summaryTable tbody');
+const detailArea = document.getElementById('detailArea');
+const aggregateArea = document.getElementById('aggregateArea');
+const printBtn = document.getElementById('printBtn');
+const csvBtn = document.getElementById('csvBtn');
+
+let selectedFiles = [];
+let currentResults = [];
+
+function updateFileList() {
+  fileListEl.innerHTML = selectedFiles.map(f => `・${f.name}`).join('<br>');
+  gradeBtn.disabled = selectedFiles.length === 0;
+}
+
+fileInput.addEventListener('change', () => {
+  selectedFiles = Array.from(fileInput.files);
+  updateFileList();
+});
+
+['dragover', 'dragenter'].forEach(evt => dropZone.addEventListener(evt, e => {
+  e.preventDefault();
+  dropZone.classList.add('dragover');
+}));
+['dragleave', 'drop'].forEach(evt => dropZone.addEventListener(evt, e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+}));
+dropZone.addEventListener('drop', e => {
+  selectedFiles = Array.from(e.dataTransfer.files);
+  updateFileList();
+});
+
+gradeBtn.addEventListener('click', async () => {
+  if (selectedFiles.length === 0) return;
+  gradeBtn.disabled = true;
+  statusEl.textContent = '採点中…';
+  resultsArea.style.display = 'none';
+  summaryBody.innerHTML = '';
+  detailArea.innerHTML = '';
+
+  const formData = new FormData();
+  selectedFiles.forEach(f => formData.append('files', f));
+  formData.append('dpi', '200');
+
+  try {
+    const res = await fetch('/api/grade', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.error) {
+      statusEl.textContent = 'エラー: ' + data.error;
+      gradeBtn.disabled = false;
+      return;
+    }
+    currentResults = data.results.map(r => ({ ...r, displayName: baseName(r.name) }));
+    renderResults();
+    statusEl.textContent = `採点完了（${data.results.length}件）`;
+  } catch (err) {
+    statusEl.textContent = '通信エラー: ' + err;
+  }
+  gradeBtn.disabled = false;
+});
+
+function baseName(name) {
+  return (name || '').replace(/\.(pdf|png|jpe?g)$/i, '');
+}
+
+function renderResults() {
+  resultsArea.style.display = 'block';
+  summaryBody.innerHTML = '';
+  detailArea.innerHTML = '';
+
+  currentResults.forEach((r, idx) => {
+    if (r.error) {
+      summaryBody.innerHTML += `<tr><td class="name">${r.name}</td><td colspan="4">読み込みエラー: ${r.error}</td></tr>`;
+      return;
+    }
+    const scoreClass = r.score === r.total ? 'score-ok' : (r.wrong.length > 0 ? 'score-warn' : '');
+    summaryBody.innerHTML += `
+      <tr>
+        <td class="name"><input type="text" value="${r.displayName}" data-idx="${idx}" class="nameInput" style="width:95%;"></td>
+        <td class="${scoreClass}">${r.score} / ${r.total}</td>
+        <td>${r.wrong.length ? r.wrong.join(', ') : 'なし'}</td>
+        <td>${r.unclear.length ? r.unclear.join(', ') : 'なし'}</td>
+        <td>${r.aligned ? '○' : '△(マーカー未検出)'}</td>
+      </tr>`;
+
+    const qGrid = r.marks.map((m, i) => {
+      const q = i + 1;
+      const isWrong = r.wrong.includes(q);
+      const isUnclear = r.unclear.includes(q);
+      const cls = isWrong ? 'wrong' : (isUnclear ? 'unclear' : '');
+      return `<div class="q-cell ${cls}"><div class="qn">問${q}</div><div class="mk">${m}</div></div>`;
+    }).join('');
+
+    detailArea.innerHTML += `
+      <div class="card">
+        <h3>${r.displayName}
+          <span class="badge ok">${r.score}/${r.total}点</span>
+          ${r.wrong.length ? `<span class="badge wrong">誤答 ${r.wrong.length}問</span>` : ''}
+          ${r.unclear.length ? `<span class="badge unclear">要確認 ${r.unclear.length}問</span>` : ''}
+        </h3>
+        <div class="q-grid">${qGrid}</div>
+        <div class="legend">
+          <span style="background:#4caf50"></span>選んだ記号：緑＝正解／赤＝誤答（塗りつぶし丸）
+        </div>
+        <details>
+          <summary>採点結果を画像で確認（得点は解答用紙の得点欄にも印字済み）</summary>
+          <img class="overlay" src="${r.overlay_image}">
+        </details>
+      </div>`;
+  });
+
+  document.querySelectorAll('.nameInput').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const idx = Number(e.target.dataset.idx);
+      currentResults[idx].displayName = e.target.value;
+      renderAggregate();
+    });
+  });
+
+  renderAggregate();
+}
+
+function computeAggregate() {
+  const valid = currentResults.filter(r => !r.error);
+  const n = valid.length;
+  const scores = valid.map(r => r.score);
+  const avg = n ? scores.reduce((a, b) => a + b, 0) / n : 0;
+  const max = n ? Math.max(...scores) : 0;
+  const min = n ? Math.min(...scores) : 0;
+  const qStats = [];
+  const total = valid.length ? valid[0].total : 20;
+  for (let q = 0; q < total; q++) {
+    let correct = 0;
+    valid.forEach(r => { if (r.marks[q] === r.answer_key[q]) correct++; });
+    qStats.push({ q: q + 1, correct, pct: n ? Math.round(correct / n * 1000) / 10 : 0 });
+  }
+  return { n, avg, max, min, qStats, total };
+}
+
+function renderAggregate() {
+  const agg = computeAggregate();
+  if (agg.n === 0) { aggregateArea.innerHTML = ''; return; }
+  const weakQs = agg.qStats.filter(s => s.pct < 50).map(s => `問${s.q}(${s.pct}%)`);
+  aggregateArea.innerHTML = `
+    <h3 style="margin-top:0;">📊 集計</h3>
+    <p>受験者数: <b>${agg.n}名</b>　平均点: <b>${agg.avg.toFixed(1)}</b> / ${agg.total}　最高点: <b>${agg.max}</b>　最低点: <b>${agg.min}</b></p>
+    ${weakQs.length ? `<p style="color:#c62828;">正答率50%未満: ${weakQs.join('、')}</p>` : '<p style="color:#2e7d32;">正答率50%未満の設問はありません</p>'}
+    <details><summary>設問別 正答率を見る</summary>
+      <div class="q-grid">
+        ${agg.qStats.map(s => `<div class="q-cell ${s.pct < 50 ? 'wrong' : ''}"><div class="qn">問${s.q}</div><div class="mk">${s.pct}%</div></div>`).join('')}
+      </div>
+    </details>`;
+}
+
+printBtn.addEventListener('click', () => {
+  const valid = currentResults.filter(r => !r.error);
+  if (valid.length === 0) { alert('採点結果がありません。'); return; }
+  const agg = computeAggregate();
+
+  let html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>採点結果 印刷用</title><style>
+    body { font-family: "Yu Mincho", "MS Mincho", serif; padding: 20px; color:#222; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    table { width: 100%; border-collapse: collapse; font-family: sans-serif; font-size: 12px; margin-bottom: 12px; }
+    th, td { border: 1px solid #999; padding: 5px 8px; text-align: center; }
+    th { background: #eee; }
+    .page-break { page-break-before: always; }
+    img.ans { width: 100%; max-width: 800px; height: auto; border: 1px solid #ccc; display:block; margin: 0 auto; }
+  </style></head><body>`;
+
+  html += `<h2>国語 活用の種類・活用形 マークシートテスト 集計表</h2>`;
+  html += `<p>受験者数: ${agg.n}名　平均点: ${agg.avg.toFixed(1)} / ${agg.total}　最高点: ${agg.max}　最低点: ${agg.min}</p>`;
+  html += `<table><tr><th>氏名</th><th>得点</th><th>誤答（問番号）</th></tr>`;
+  [...valid].sort((a, b) => b.score - a.score).forEach(r => {
+    html += `<tr><td style="text-align:left;">${r.displayName}</td><td><b>${r.score}</b>/${r.total}</td><td>${r.wrong.join(', ') || 'なし'}</td></tr>`;
+  });
+  html += `</table>`;
+  html += `<h3>設問別 正答率</h3><table><tr>${agg.qStats.map(s => `<th>問${s.q}</th>`).join('')}</tr><tr>${agg.qStats.map(s => `<td style="${s.pct < 50 ? 'color:#c62828;font-weight:bold;' : ''}">${s.pct}%</td>`).join('')}</tr></table>`;
+
+  valid.forEach(r => {
+    html += `<div class="page-break"></div>`;
+    html += `<img class="ans" src="${r.overlay_image}">`;
+  });
+
+  html += `<script>window.onload = function(){ setTimeout(function(){ window.print(); }, 300); };<\/script>`;
+  html += `</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+});
+
+csvBtn.addEventListener('click', () => {
+  const valid = currentResults.filter(r => !r.error);
+  if (valid.length === 0) { alert('採点結果がありません。'); return; }
+  const header = ['氏名', '得点', ...Array.from({length: 20}, (_, i) => `問${i + 1}`)];
+  const rows = [header.join(',')];
+  valid.forEach(r => {
+    rows.push([r.displayName, r.score, ...r.marks].join(','));
+  });
+  const csv = '﻿' + rows.join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '採点結果_活用形20問.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
