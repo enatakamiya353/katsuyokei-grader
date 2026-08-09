@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-国語 活用の種類・活用形 マークシートテスト Ver.2.0（縦書き・24問・4/5/6択混在・解答用紙1枚）
+国語 活用の種類・活用形 マークシートテスト Ver.2.0（縦書き・20問・5/6択混在・解答用紙1枚）
 マークシート（塗りつぶし式解答用紙）自動採点スクリプト。
 
 小5国語_中間テスト_20問ver の grade_kokugo20.py（四隅マーカー較正付き）を、
-「問題ごとに選択肢の数が4択・5択・6択と異なる」解答用紙に合わせて拡張したもの。
-問１〜１２＝６択、問１３〜２０＝５択、問２１〜２４＝４択（mark.tex のレイアウトと対応）。
+「問題ごとに選択肢の数が5択・6択と異なる」解答用紙に合わせて拡張したもの。
+問１〜１２＝６択、問１３〜２０＝５択（mark.tex のレイアウトと対応）。
 
 しくみ:
   1. mark.pdf（デジタル生成された基準PDF）の解答用紙ページから
-     ○の中心座標をベクトル図形として読み取り、問1〜24・各問の選択肢に対応付ける。
+     ○の中心座標をベクトル図形として読み取り、問1〜20・各問の選択肢に対応付ける。
   2. 生徒がぬりつぶした解答用紙をスキャンした画像/PDFを読み込む（1人1ページ）。
   3. 解答用紙四隅の■マーカー（\\drawmarkers）を使ってページの傾き・ズレを補正し、
      各○の位置の黒さ（濃さ）を測定して、最も濃い選択肢をぬりつぶされた解答と判定する。
@@ -20,7 +20,7 @@
   python grade_katsuyokei20.py 生徒A.pdf 生徒B.pdf ...   （1人1ファイル、または1ページ=1名の複数ページPDF）
   python grade_katsuyokei20.py --dir スキャンフォルダ    # フォルダ内をまとめて採点
 
-出力: 採点結果_活用形24問.csv （このスクリプトと同じフォルダに作成）
+出力: 採点結果_活用形20問.csv （このスクリプトと同じフォルダに作成）
 """
 import argparse
 import csv
@@ -36,22 +36,20 @@ BASE_DIR = Path(__file__).parent
 REF_PDF = BASE_DIR / "mark.pdf"
 ANSWER_KEY_PATH = BASE_DIR / "answer_key.json"
 
-# mark.pdf は9ページ構成：1=表紙, 2〜6=問題, 7=解答用紙, 8〜9=解答一覧
+# mark.pdf は8ページ構成：1=表紙, 2〜5=問題, 6=解答用紙, 7〜8=解答一覧
 # 0始まりページ番号：
-ANSWER_SHEET_PAGE_INDEX = 6
+ANSWER_SHEET_PAGE_INDEX = 5
 
-N_QUESTIONS = 24
-POINTS_PER_QUESTION = 5  # 1問5点 (24問×5点=120点満点)
+N_QUESTIONS = 20
+POINTS_PER_QUESTION = 5  # 1問5点 (20問×5点=100点満点)
 ALL_CHOICES = ["ア", "イ", "ウ", "エ", "オ", "カ"]
 
-# 問番号(1始まり) -> その問の選択肢数。mark.tex の【1】【2】【3】の構成と対応。
+# 問番号(1始まり) -> その問の選択肢数。mark.tex の【1】【2】の構成と対応。
 CHOICE_COUNTS = {}
 for q in range(1, 13):
     CHOICE_COUNTS[q] = 6
 for q in range(13, 21):
     CHOICE_COUNTS[q] = 5
-for q in range(21, 25):
-    CHOICE_COUNTS[q] = 4
 
 PAGE_W_MM, PAGE_H_MM = 210.0, 297.0
 MX, MY = 12.5 / PAGE_W_MM, 12.5 / PAGE_H_MM  # \drawmarkers の■中心は各辺から1.25cm
@@ -126,7 +124,7 @@ def _calibrate_from_markers(fills):
 def extract_circle_grid(ref_pdf_path):
     """基準PDFの解答用紙ページ（1枚）から○の中心座標(ページ比率、四隅マーカー基準で較正済み)を
     抽出し、{問番号1〜20: [(fx,fy)_ア, (fx,fy)_イ, ...]}（各問CHOICE_COUNTS[問]個）を返す。
-    問番号は左ブロック（1〜12・各6択）→右ブロック（13〜24・13〜20は5択、21〜24は4択）の順。
+    問番号は左ブロック（1〜10・各6択）→右ブロック（11〜20・11〜12は6択、13〜20は5択）の順。
     ○の並びは選択肢を左詰めで描画しているため（灰色の未使用○は描かない仕様）、各行の
     ○の個数がそのままその問の選択肢数と一致する。"""
     doc = fitz.open(str(ref_pdf_path))
@@ -288,7 +286,7 @@ def read_page_as_bgr(page, dpi):
 
 
 def grade_one_page(gray, grid, radius_px, fill_thresh=35, ambiguous_gap=8):
-    """解答用紙1枚（24問）を採点し、問1〜24順のmarksリストを返す。
+    """解答用紙1枚（20問）を採点し、問1〜20順のmarksリストを返す。
     各問の選択肢数はCHOICE_COUNTSに従い、問ごとに可変（4/5/6択）。"""
     h, w = gray.shape
     marks = []
@@ -363,7 +361,7 @@ def _init_globals():
 
 def main():
     parser = argparse.ArgumentParser(
-        description="国語 活用の種類・活用形 マークシートテスト Ver.2.0(24問・4/5/6択混在) 自動採点"
+        description="国語 活用の種類・活用形 マークシートテスト Ver.2.0(20問・5/6択混在) 自動採点"
     )
     parser.add_argument("sources", nargs="*", help="スキャンしたPDF/画像ファイル（複数指定可）")
     parser.add_argument("--dir", help="このフォルダ内の.pdf/.png/.jpgをまとめて採点")
@@ -395,7 +393,7 @@ def main():
 
     if rows:
         header = ["採点日", "ファイル名", "得点"] + [f"問{i}" for i in range(1, N_QUESTIONS + 1)]
-        out_path = BASE_DIR / "採点結果_活用形24問.csv"
+        out_path = BASE_DIR / "採点結果_活用形20問.csv"
         with open(out_path, "w", encoding="utf-8-sig", newline="") as f:
             w = csv.writer(f)
             w.writerow(header)
