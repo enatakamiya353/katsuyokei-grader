@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-国語 活用の種類・活用形 マークシートテスト（縦書き・20問・4/5/6択混在・解答用紙1枚）
+国語 活用の種類・活用形 マークシートテスト Ver.2.0（縦書き・20問・4/5/6択混在・解答用紙1枚）
 マークシート（塗りつぶし式解答用紙）自動採点スクリプト。
 
 小5国語_中間テスト_20問ver の grade_kokugo20.py（四隅マーカー較正付き）を、
@@ -363,7 +363,7 @@ def _init_globals():
 
 def main():
     parser = argparse.ArgumentParser(
-        description="国語 活用の種類・活用形 マークシートテスト(20問・4/5/6択混在) 自動採点"
+        description="国語 活用の種類・活用形 マークシートテスト Ver.2.0(20問・4/5/6択混在) 自動採点"
     )
     parser.add_argument("sources", nargs="*", help="スキャンしたPDF/画像ファイル（複数指定可）")
     parser.add_argument("--dir", help="このフォルダ内の.pdf/.png/.jpgをまとめて採点")
