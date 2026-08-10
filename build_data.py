@@ -104,6 +104,23 @@ def build():
     rng.shuffle(sec1)
     sec2 = rng.sample(SHURUI_POOL, N_SEC2)
     rng.shuffle(sec2)
+
+    # カ行変格活用（＝「来る」のみ）が複数回選ばれると同じ動詞の繰り返しになるため、
+    # 1問だけに制限する。空いた分は上一段活用・下一段活用の未使用の例文で埋める
+    # （指示：カ変は1つに変更し、上一段、下一段を追加）。
+    kahen_idx = [i for i, (cat, _, _) in enumerate(sec2) if cat == "カ行変格活用"]
+    used_sents = {sent for _, sent, _ in sec2}
+    if len(kahen_idx) > 1:
+        replacements = []
+        for cat in ("上一段活用", "下一段活用"):
+            for item in SHURUI_POOL:
+                if item[0] == cat and item[1] not in used_sents:
+                    replacements.append(item)
+                    used_sents.add(item[1])
+                    break
+        for idx, repl in zip(kahen_idx[1:], replacements):
+            sec2[idx] = repl
+
     return sec1, sec2
 
 
