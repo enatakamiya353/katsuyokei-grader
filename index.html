@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>国語 活用の種類・活用形 マークシートテスト Ver.2.0 採点画面</title>
+<title>国語 活用の種類・活用形 マークシートテスト Ver.3.0 採点画面</title>
 <style>
   body { font-family: "Yu Gothic", "Meiryo", sans-serif; background: #f4f7f6; color: #222; padding: 24px; }
   .container { max-width: 1000px; margin: 0 auto; background: #fff; border-radius: 8px; padding: 24px 28px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
@@ -41,7 +41,7 @@
 </head>
 <body>
 <div class="container">
-  <h1>国語 活用の種類・活用形 マークシートテスト Ver.2.0 採点画面</h1>
+  <h1>国語 活用の種類・活用形 マークシートテスト Ver.3.0 採点画面</h1>
   <p class="sub">スキャンした解答用紙（画像 または PDF）をアップロードすると、○の塗りつぶしを自動判定して採点します。解答用紙は1人1枚。複数ページのPDFは1ページ=1名分として扱います。問題ごとに選択肢の数（4択・5択・6択）が異なりますが、自動で判定します。</p>
 
   <div class="upload-box" id="dropZone">
@@ -247,7 +247,7 @@ printBtn.addEventListener('click', () => {
     img.ans { width: 100%; max-width: 800px; height: auto; border: 1px solid #ccc; display:block; margin: 0 auto; }
   </style></head><body>`;
 
-  html += `<h2>国語 活用の種類・活用形 マークシートテスト Ver.2.0 集計表</h2>`;
+  html += `<h2>国語 活用の種類・活用形 マークシートテスト Ver.3.0 集計表</h2>`;
   html += `<p>受験者数: ${agg.n}名　平均点: ${agg.avg.toFixed(1)} / ${agg.total}　最高点: ${agg.max}　最低点: ${agg.min}</p>`;
   html += `<table><tr><th>氏名</th><th>得点</th><th>誤答（問番号）</th></tr>`;
   [...valid].sort((a, b) => b.score - a.score).forEach(r => {
@@ -282,7 +282,7 @@ csvBtn.addEventListener('click', () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = '採点結果_活用形20問_ver2.csv';
+  a.download = '採点結果_活用形20問_ver3.csv';
   a.click();
   URL.revokeObjectURL(url);
 });

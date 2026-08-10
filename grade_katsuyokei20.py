@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-国語 活用の種類・活用形 マークシートテスト Ver.2.0（縦書き・20問・5/6択混在・解答用紙1枚）
+国語 活用の種類・活用形 マークシートテスト Ver.3.0（縦書き・20問・5/6択混在・解答用紙1枚）
 マークシート（塗りつぶし式解答用紙）自動採点スクリプト。
 
 小5国語_中間テスト_20問ver の grade_kokugo20.py（四隅マーカー較正付き）を、
@@ -20,7 +20,7 @@
   python grade_katsuyokei20.py 生徒A.pdf 生徒B.pdf ...   （1人1ファイル、または1ページ=1名の複数ページPDF）
   python grade_katsuyokei20.py --dir スキャンフォルダ    # フォルダ内をまとめて採点
 
-出力: 採点結果_活用形20問.csv （このスクリプトと同じフォルダに作成）
+出力: 採点結果_活用形20問_ver3.csv （このスクリプトと同じフォルダに作成）
 """
 import argparse
 import csv
@@ -36,9 +36,10 @@ BASE_DIR = Path(__file__).parent
 REF_PDF = BASE_DIR / "mark.pdf"
 ANSWER_KEY_PATH = BASE_DIR / "answer_key.json"
 
-# mark.pdf は8ページ構成：1=表紙, 2〜5=問題, 6=解答用紙, 7〜8=解答一覧
+# mark.pdf は7ページ構成：1=表紙, 2〜4=問題, 5=解答用紙, 6〜7=解答一覧
+# （Ver.3.0は【2】が8問とも直接出題形式で1ページに収まるため、Ver.2.0の8ページ構成より1枚少ない）
 # 0始まりページ番号：
-ANSWER_SHEET_PAGE_INDEX = 5
+ANSWER_SHEET_PAGE_INDEX = 4
 
 N_QUESTIONS = 20
 POINTS_PER_QUESTION = 5  # 1問5点 (20問×5点=100点満点)
@@ -361,7 +362,7 @@ def _init_globals():
 
 def main():
     parser = argparse.ArgumentParser(
-        description="国語 活用の種類・活用形 マークシートテスト Ver.2.0(20問・5/6択混在) 自動採点"
+        description="国語 活用の種類・活用形 マークシートテスト Ver.3.0(20問・5/6択混在) 自動採点"
     )
     parser.add_argument("sources", nargs="*", help="スキャンしたPDF/画像ファイル（複数指定可）")
     parser.add_argument("--dir", help="このフォルダ内の.pdf/.png/.jpgをまとめて採点")
@@ -393,7 +394,7 @@ def main():
 
     if rows:
         header = ["採点日", "ファイル名", "得点"] + [f"問{i}" for i in range(1, N_QUESTIONS + 1)]
-        out_path = BASE_DIR / "採点結果_活用形20問.csv"
+        out_path = BASE_DIR / "採点結果_活用形20問_ver3.csv"
         with open(out_path, "w", encoding="utf-8-sig", newline="") as f:
             w = csv.writer(f)
             w.writerow(header)
