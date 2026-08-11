@@ -96,7 +96,7 @@ def main():
 \\vspace*{{1cm}}
 
 {{\\fontsize{{26}}{{34}}\\selectfont \\rmfamily 国語　活用の種類・活用形}} \\\\[3mm]
-{{\\Large マークシートテスト（２０問）Ver.３．０}}
+{{\\Large マークシートテスト（２０問）Ver.４．０}}
 
 \\vspace{{8mm}}
 
@@ -142,7 +142,7 @@ def main():
 \\pagestyle{{empty}}
 
 {{\\yoko
-\\AnswerSheetHeader{{国語 活用の種類・活用形 マークシートテスト Ver.3.0 解答用紙(問1〜問20)}}
+\\AnswerSheetHeader{{国語 活用の種類・活用形 マークシートテスト Ver.4.0 解答用紙(問1〜問20)}}
 
 \\noindent
 \\begin{{tabularx}}{{\\yokowidth}}{{|>{{\\centering\\arraybackslash}}p{{0.8cm}}|X|>{{\\centering\\arraybackslash}}p{{0.8cm}}|X|}}
@@ -156,7 +156,7 @@ def main():
 \\tate
 \\pagestyle{{plain}}
 \\normalfont\\selectfont
-\\textbf{{\\Large 解答一覧【国語　活用の種類・活用形　マークシートテスト　Ver.３．０】}}
+\\textbf{{\\Large 解答一覧【国語　活用の種類・活用形　マークシートテスト　Ver.４．０】}}
 \\vspace{{2em}}
 
 \\hrule
